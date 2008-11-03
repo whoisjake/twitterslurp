@@ -1,0 +1,98 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'optparse'
+require 'ostruct'
+require 'json'
+require 'net/http'
+require 'cgi'
+require 'lib/dropio'
+
+class SlurpConfig
+  def self.parse(args)
+     options = OpenStruct.new
+     options.token = ''
+
+     opts = OptionParser.new do |opts|
+       opts.banner = "Usage: ./slurp [options]"
+
+       opts.separator ""
+       opts.separator "Specific options:"
+
+       opts.on("-d", "--drop DROPNAME") do |drop|
+         options.drop = drop
+       end
+       
+       opts.on("-s", "--search QUERY") do |query|
+          options.query = query
+        end
+       
+       opts.on("-t", "--token [TOKEN]") do |token|
+          options.token = token
+       end
+
+       opts.separator ""
+       opts.separator "Common options:"
+
+       opts.on_tail("-h", "--help", "Show this message") do
+         puts opts
+         exit
+       end
+       
+       opts.on_tail("--version", "Show version") do
+         puts OptionParser::Version.join('.')
+         exit
+       end
+     end
+
+     opts.parse!(args)
+     
+     if options.drop.nil? && options.query.nil?
+       puts opts
+       exit 0
+     end
+     
+     options
+  end
+end
+
+options = SlurpConfig.parse(ARGV)
+
+include Dropio
+# PASTE YOUR API KEY HERE
+Dropio.api_key = "your_api_key"
+
+GOOD_WORDS = %w[love like awesome rad cool sweet neat clever rocks great fantastic]
+BAD_WORDS = %w[hate stupid dumb slow sucks sucky suck blows retarded]
+
+begin
+  drop = Drop.find(options.drop, options.token)
+  if drop.guests_can_add || drop.admin_token
+    puts "Starting to slurp tweets that contain \"#{options.query}\" into #{drop.name}"
+    
+    loop do
+      last_id = 0
+      res = Net::HTTP.get URI.parse("http://search.twitter.com/search.json?rpp=100&since_id=#{last_id}&q=#{CGI::escape(options.query)}")
+      tweets = JSON.parse(res)['results']
+
+      puts "Slurping #{tweets.count} tweets"
+      tweets.each do |tweet|
+        color = "000000"
+        if (tweet["text"].split(" ") & GOOD_WORDS).any?
+          color = "008000"
+        elsif (tweet["text"].split(" ") & BAD_WORDS).any?
+          color = "ff0000"
+        end
+        a = drop.create_note("Tweet from #{tweet["from_user"]}", "<span style=\"font-size: medium;color: \##{color};\">" + tweet["text"] + "</span><br/><a href=\"http://twitter.com/#{tweet["from_user"]}/status/#{tweet["id"]}\">http://twitter.com/#{tweet["from_user"]}/status/#{tweet["id"]}</a>")
+        last_id = tweet["id"] if (tweet["id"] > last_id)
+      end
+      
+      sleep(60*2)
+    end
+    
+  else
+    puts "Slurping can't add notes to the Drop #{drop.name}. Please sign in as the admin and set 'Guests can add' or use the admin token/password."
+  end
+rescue Exception => e
+  puts "There was a problem slurping: #{e.message}"
+end
