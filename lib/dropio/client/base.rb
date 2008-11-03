@@ -29,8 +29,9 @@ class Dropio::Client
     comments
   end
   
-  # Creates +Drop+ with +attributes+: :url, :password, :admin_password, :premium_code
-  # :private_type, :expiration_length, :delete_permission_type
+  # Creates a drop with an +attributes+ hash.
+  # Valid attributes: name (string), guests_can_comment (boolean), guests_can_add (boolean), guests_can_delete (boolean), expiration_length (string), password (string), admin_password (string), and premium_code (string)
+  # Descriptions can be found here: http://groups.google.com/group/dropio-api/web/full-api-documentation
   def create_drop(attributes = {})
     uri = URI::HTTP.build({:path => drop_path})
     form = create_form({ :token => token }.merge(attributes))
@@ -198,7 +199,8 @@ class Dropio::Client
     expires = (Time.now.utc + 10*60).to_i
     token = get_default_token(drop)
     path = Dropio.base_url + "/#{drop.name}"
-    path += "/asset/#{asset.name}" if asset 
+    path += "/asset/#{asset.name}" if asset
+    path += "/from_api"
     sig = Digest::SHA1.hexdigest("#{expires}+#{token}+#{drop.name}")
     path + "?expires=#{expires}&signature=#{sig}"
   end
