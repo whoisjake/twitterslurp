@@ -34,7 +34,7 @@ class Dropio::Client
   # Descriptions can be found here: http://groups.google.com/group/dropio-api/web/full-api-documentation
   def create_drop(attributes = {})
     uri = URI::HTTP.build({:path => drop_path})
-    form = create_form({ :token => token }.merge(attributes))
+    form = create_form(attributes)
     req = Net::HTTP::Post.new(uri.request_uri, DEFAULT_HEADER)
     req.set_form_data(form)
     drop = nil
@@ -66,16 +66,17 @@ class Dropio::Client
   end
   
   # Adds a file to a +Drop+
-  def add_file(drop, file)
-    token = get_admin_token(drop)
-    file_data = File.read(file) if File.exists?(file)
-    uri = URI.parse(Dropio.upload_url)
-    req = Net::HTTP::Post.new(url.path)
-    File.open(@attributes[:file]) do |file|
-      form = create_form( { :token => token , :file => file_data })
-      req.multipart_params form
+  def add_file(drop, file_path)
+    token = get_default_token(drop)
+    
+    File.open(file_path, 'r') do |file|
+      uri = URI.parse(Dropio.upload_url)
+      req = Net::HTTP::Post.new(uri.path)
+      form = create_form( { :drop_name => drop.name, :token => token , :file => file } )
+      req.multipart_params = form
       complete_request(req)
     end
+    
     true
   end
   
@@ -87,7 +88,7 @@ class Dropio::Client
     req = Net::HTTP::Post.new(uri.request_uri, DEFAULT_HEADER)
     req.set_form_data(form)
     asset = nil
-    complete_request(req) { |body| asset = Mapper.map_assets(asset, body) }
+    complete_request(req) { |body| asset = Mapper.map_assets(drop, body) }
     asset
   end
   
@@ -99,7 +100,7 @@ class Dropio::Client
     req = Net::HTTP::Post.new(uri.request_uri, DEFAULT_HEADER)
     req.set_form_data(form)
     asset = nil
-    complete_request(req) { |body| asset = Mapper.map_assets(asset, body) }
+    complete_request(req) { |body| asset = Mapper.map_assets(drop, body) }
     asset
   end
   
@@ -207,7 +208,7 @@ class Dropio::Client
   end
   
   def create_form(options = {})
-    { :api_key => Dropio.api_key, :format => 'json' }.merge(options)
+    { :api_key => Dropio.api_key, :format => 'json', :version => '1.0' }.merge(options)
   end
   
   def send_asset(asset, params = {})
@@ -221,7 +222,7 @@ class Dropio::Client
   end
   
   def get_default_token(drop)
-    (drop.admin_token) ? drop.admin_token : drop.guest_token
+    drop.admin_token || drop.guest_token
   end
   
   def get_admin_token(drop)
@@ -229,7 +230,7 @@ class Dropio::Client
   end
   
   def get_request_tokens(token = '')
-    "api_key=#{Dropio.api_key}&token=#{token}&format=json"
+    "api_key=#{Dropio.api_key}&token=#{token}&version=1.0&format=json"
   end
 
 end
