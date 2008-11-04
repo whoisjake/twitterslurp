@@ -6,7 +6,10 @@ require 'ostruct'
 require 'json'
 require 'net/http'
 require 'cgi'
-require 'lib/dropio'
+
+lib_dir = File.dirname(__FILE__) + '/lib'
+$:.unshift lib_dir unless $:.include?(lib_dir)
+require 'dropio'
 
 class SlurpConfig
   def self.parse(args)
