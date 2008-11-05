@@ -108,10 +108,10 @@ class Dropio::Client
   end
   
   # Creates a link +Asset+
-  def create_link(drop, url, title = nil, contents = nil)
+  def create_link(drop, url, title = nil, description = nil)
     token = get_default_token(drop)
     uri = URI::HTTP.build({:path => asset_path(drop)})
-    form = create_form( { :token => token, :url => url, :title => title, :contents => contents })
+    form = create_form( { :token => token, :url => url, :title => title, :description => description })
     req = Net::HTTP::Post.new(uri.request_uri, DEFAULT_HEADER)
     req.set_form_data(form)
     asset = nil
@@ -121,13 +121,12 @@ class Dropio::Client
   
   # Saves a +Comment+, requires admin token.
   def save_comment(comment)
-    token = get_default_token(asset.drop)
-    uri = URI::HTTP.build({:path => comment_path(asset.drop, asset, comment)})
-    form = create_form( { :token => token, :contents => contents })
+    token = get_default_token(comment.asset.drop)
+    uri = URI::HTTP.build({:path => comment_path(comment.asset.drop, comment.asset, comment)})
+    form = create_form( { :token => token, :contents => comment.contents })
     req = Net::HTTP::Put.new(uri.request_uri, DEFAULT_HEADER)
     req.set_form_data(form)
-    comment = nil
-    complete_request(req) { |body| comment = Mapper.map_comments(asset, body) }
+    complete_request(req) { |body| comment = Mapper.map_comments(comment.asset, body) }
     comment
   end
   
@@ -162,7 +161,7 @@ class Dropio::Client
   
   # Sends an email +message+, containing the +asset+ to a list of +emails+
   def send_to_emails(asset, emails = [], message = nil)
-    params = { :medium => "drop", :emails => emails.join(","), :message => message }
+    params = { :medium => "email", :emails => emails.join(","), :message => message }
     send_asset(asset,params)
   end
   
@@ -183,7 +182,6 @@ class Dropio::Client
                          :contents => asset.contents })
     req = Net::HTTP::Put.new(uri.request_uri, DEFAULT_HEADER)
     req.set_form_data(form)
-    asset = nil
     complete_request(req) { |body| asset = Mapper.map_assets(asset.drop, body)}
     asset
   end
@@ -270,6 +268,8 @@ class Dropio::Client
       drop
     when nil
       ''
+    else
+      raise ArgumentError, "Client#drop_path takes a Drop or a String, got #{drop.inspect}"
     end
     
     return "/drops/" + drop_name
@@ -277,7 +277,7 @@ class Dropio::Client
   
   # Creates a path for sending an +Asset+
   def send_to_path(drop, asset)
-    return asset_path(asset) + "/send_to"
+    return asset_path(drop, asset) + "/send_to"
   end
     
   # Starts and completes the given request. Returns or yields the response body.
