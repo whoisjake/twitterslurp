@@ -63,7 +63,7 @@ options = SlurpConfig.parse(ARGV)
 
 include Dropio
 # PASTE YOUR API KEY HERE
-Dropio.api_key = "fbfddd08f02f647130d3e453a1b40923a8ee2ac1"
+Dropio.api_key = "your_api_key_here"
 
 GOOD_WORDS = %w[love like awesome rad cool sweet neat clever rocks great fantastic]
 BAD_WORDS = %w[hate stupid dumb slow sucks sucky suck blows retarded]
