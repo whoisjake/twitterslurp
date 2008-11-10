@@ -63,7 +63,7 @@ options = SlurpConfig.parse(ARGV)
 
 include Dropio
 # PASTE YOUR API KEY HERE
-Dropio.api_key = "your_api_key"
+Dropio.api_key = "fbfddd08f02f647130d3e453a1b40923a8ee2ac1"
 
 GOOD_WORDS = %w[love like awesome rad cool sweet neat clever rocks great fantastic]
 BAD_WORDS = %w[hate stupid dumb slow sucks sucky suck blows retarded]
@@ -75,7 +75,7 @@ begin
     
     loop do
       last_id = 0
-      res = Net::HTTP.get URI.parse("http://search.twitter.com/search.json?rpp=100&since_id=#{last_id}&q=#{CGI::escape(options.query)}")
+      res = Net::HTTP.get URI.parse("http://search.twitter.com/search.json?rpp=50&since_id=#{last_id}&q=#{CGI::escape(options.query)}")
       tweets = JSON.parse(res)['results']
 
       puts "Slurping #{tweets.count} tweets"
@@ -90,7 +90,7 @@ begin
         last_id = tweet["id"] if (tweet["id"] > last_id)
       end
       
-      sleep(60*2)
+      sleep(60*5)
     end
     
   else
