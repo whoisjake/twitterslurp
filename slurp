@@ -65,8 +65,8 @@ include Dropio
 # PASTE YOUR API KEY HERE
 Dropio.api_key = "your_api_key_here"
 
-GOOD_WORDS = %w[love like awesome rad cool sweet neat clever rocks great fantastic]
-BAD_WORDS = %w[hate stupid dumb slow sucks sucky suck blows retarded]
+GOOD_WORDS = %w[love like awesome rad cool sweet neat clever rocks great fantastic interesting fun exciting nice]
+BAD_WORDS = %w[hate stupid dumb slow sucks sucky suck blows idiot]
 
 begin
   drop = Drop.find(options.drop, options.token)
