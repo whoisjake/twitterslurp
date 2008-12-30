@@ -78,7 +78,7 @@ begin
       res = Net::HTTP.get URI.parse("http://search.twitter.com/search.json?rpp=50&since_id=#{last_id}&q=#{CGI::escape(options.query)}")
       tweets = JSON.parse(res)['results']
 
-      puts "Slurping #{tweets.count} tweets"
+      puts "Slurping #{tweets.size} tweets"
       tweets.each do |tweet|
         color = "000000"
         if (tweet["text"].split(" ") & GOOD_WORDS).any?
